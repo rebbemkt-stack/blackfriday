@@ -129,6 +129,14 @@ footer{padding-block:26px 40px;text-align:center;font-size:13px;color:#a77f8c}
 .steps li{counter-increment:s;display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:center;background:rgba(242,201,212,.08);border:1px solid rgba(242,201,212,.18);border-radius:18px;padding:14px 16px;color:#f1dbe1;font-size:16px}
 .steps li:before{content:counter(s);width:44px;height:44px;border-radius:50%;background:var(--pink);color:var(--wine);display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:20px}
 .steps b{color:#fff}
+.urg{position:relative;z-index:2;margin-top:28px;border:1.5px solid rgba(242,201,212,.35);border-radius:22px;padding:20px 18px;background:rgba(20,4,10,.35)}
+.urg .eyebrow{color:var(--pink);text-align:center}
+.urg-h{font-size:clamp(28px,8vw,36px);text-align:center;margin-top:6px}
+.urg-h em{color:var(--pink)}
+.urg-l{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:12px}
+.urg-l li{font-size:15.5px;line-height:1.45;color:#f1dbe1}
+.urg-l b{color:#fff;display:block;font-size:16px}
+.urg.last{border-color:var(--pink);background:rgba(194,87,122,.18)}
 .sticky{position:fixed;left:0;right:0;bottom:0;z-index:50;padding:10px max(16px,env(safe-area-inset-left,0px)) calc(10px + env(safe-area-inset-bottom,0px));background:rgba(20,4,10,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid rgba(242,201,212,.2);transform:translateY(110%);transition:transform .3s}
 .sticky.on{transform:none}
 .sticky .in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:12px}
@@ -163,7 +171,7 @@ footer{padding-bottom:110px}
       <div class="price" id="precio" hidden>
         <div class="pr-row"><s>74,99 €</s><b>59,99 €</b><span>/ trimestre</span></div>
         <p class="pr-month">Menos de 20 € al mes</p>
-        <ul class="pr-gifts"><li>🎁 Kit antiexcesos de regalo</li><li>🎁 Guía Definitiva de regalo</li></ul>
+        <ul class="pr-gifts"><li>🎁 Kit antiexcesos de regalo</li><li>🎁 Guía Definitiva de regalo <span style="font-weight:400;color:#8b5a68">(valor 8,99&nbsp;€)</span></li></ul>
         <p class="pr-fine">Precio de Black Friday para tus 3 primeros meses. Después se renueva al trimestral normal de 74,99&nbsp;€.</p>
       </div>
       <p class="until" id="until" hidden></p>
@@ -171,6 +179,17 @@ footer{padding-bottom:110px}
       <p class="note" id="ctaNote">Entra en el grupo VIP de WhatsApp: allí suelto la oferta antes que en ningún sitio.</p>
     </div>
     <div class="trust"><span>Dieta sin prohibiciones</span><span>En casa o en el gym</span><span>Todo en la app</span></div>
+    <div class="urg" id="urg">
+      <div class="eyebrow">Por qué no esperar</div>
+      <h2 class="urg-h" id="urgH">Una oferta que <em>no vuelve</em></h2>
+      <ul class="urg-l">
+        <li><b>⏳ Solo 7 días.</b> Del martes 24 al lunes 30 a las 23:59. Ni un minuto más.</li>
+        <li><b>🔒 Este precio no se repite.</b> Cuando cierre, el trimestre vuelve a 74,99&nbsp;€.</li>
+        <li><b>🎁 Regalos solo en Black Friday.</b> El kit antiexcesos y la Guía Definitiva (valor 8,99&nbsp;€) solo entran con esta oferta.</li>
+        <li id="urgVip"><b>📲 El grupo VIP va primero.</b> Allí aviso antes que en ningún sitio, para que no se te pase.</li>
+        <li id="urgPlazas" hidden></li>
+      </ul>
+    </div>
   </div>
 </header>
 
@@ -259,12 +278,14 @@ var TEASER  = "🎁 De regalo: kit antiexcesos + Guía Definitiva"; // antes del
 var TEASER_ABIERTA = "59,99 € el trimestre · antes 74,99 €"; // desde el 24
 var ABRE    = "2026-11-24T00:00:00+01:00";
 var CIERRA  = "2026-11-30T23:59:59+01:00";
+var PLAZAS  = 0;    // nº REAL de plazas a este precio (0 = no se muestra nada de plazas)
 /* ================================= */
 
 var abre = new Date(ABRE).getTime();
 var cierra = CIERRA ? new Date(CIERRA).getTime() : 0;
 var grupo = GRUPO || RESPALDO;
 var $ = function(id){ return document.getElementById(id); };
+if (PLAZAS > 0) { $("urgPlazas").innerHTML = "<b>🔥 Solo " + PLAZAS + " plazas a este precio.</b> Cuando se acaben, se acaba la oferta aunque queden días."; $("urgPlazas").hidden = false; }
 function teaser(t){ $("teaser").textContent = t || ""; $("teaser").hidden = !t; }
 
 function pad(n){ return n < 10 ? "0" + n : "" + n; }
@@ -278,7 +299,7 @@ function setCta(href, main, fin, sticky){
   $("ctaMain").textContent = main; $("ctaFinal").textContent = fin; $("ctaSticky").textContent = sticky;
   document.querySelectorAll(".js-cta").forEach(function(a){ a.href = href; });
 }
-var fase = "";
+var fase = "", ultimas = false;
 function ponerFase(f){
   if (f === fase) return; fase = f;
   var c = $("cuenta");
@@ -300,10 +321,13 @@ function ponerFase(f){
     $("stickyLabel").textContent = cierra ? "para que termine la oferta" : "La oferta ya está abierta";
     $("until").hidden = !cierra; if (cierra) $("until").textContent = "Hasta el " + fecha(cierra) + ".";
     $("finalText").textContent = "La oferta ya está abierta. Te espero dentro.";
+    $("urgVip").hidden = true;
+    $("urgH").innerHTML = "Tienes hasta el lunes, <em>no lo dejes</em>";
     $("steps").hidden = true;
   } else {
     $("tick").textContent = "BLACK FRIDAY ✦ REBBE CLUB ✦ OFERTA TERMINADA ✦ GRACIAS POR ESTAR ✦ BLACK FRIDAY ✦ REBBE CLUB ✦ OFERTA TERMINADA ✦ GRACIAS POR ESTAR ✦";
     $("countLabel").textContent = "La oferta de Black Friday ha terminado";
+    $("urg").hidden = true;
     teaser(""); $("precio").hidden = true;
     $("faqPrecio").textContent = "La oferta de Black Friday ya terminó. Entra en el grupo VIP para enterarte la primera de lo próximo 🖤";
     c.classList.add("done"); $("until").hidden = true;
@@ -320,6 +344,14 @@ function tick(){
   else if (!cierra || now < cierra) { ponerFase("abierta"); objetivo = cierra; }
   else { ponerFase("fin"); }
   var t = objetivo ? Math.max(0, objetivo - now) : 0, s = Math.floor(t / 1000);
+  if (fase === "abierta" && cierra && t < 48 * 3600 * 1000 && !ultimas) {
+    ultimas = true;
+    $("tick").textContent = "ÚLTIMAS HORAS ✦ BLACK FRIDAY ✦ CIERRA EL LUNES A LAS 23:59 ✦ NO SE REPITE ✦ ÚLTIMAS HORAS ✦ BLACK FRIDAY ✦ CIERRA EL LUNES A LAS 23:59 ✦ NO SE REPITE ✦";
+    $("countLabel").textContent = "⚠️ Últimas horas · termina en";
+    $("urgH").innerHTML = "Últimas horas: <em>después no hay vuelta atrás</em>";
+    $("urg").classList.add("last");
+    $("stickyLabel").textContent = "últimas horas de oferta";
+  }
   var d = Math.floor(s / 86400), hh = pad(Math.floor(s % 86400 / 3600)), mm = pad(Math.floor(s % 3600 / 60)), ss = pad(s % 60);
   $("d").textContent = d; $("h").textContent = hh; $("m").textContent = mm; $("s").textContent = ss;
   $("stickyTime").textContent = objetivo ? (d > 0 ? d + "d " : "") + hh + ":" + mm + ":" + ss : "Black Friday";
