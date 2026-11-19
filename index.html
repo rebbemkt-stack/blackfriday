@@ -112,7 +112,15 @@ p{margin:0}
 footer{padding-block:26px 40px;text-align:center;font-size:13px;color:#a77f8c}
 
 /* mejoras */
-.teaser{position:relative;z-index:2;margin:14px auto 0;display:table;background:rgba(242,201,212,.14);border:1.5px solid rgba(242,201,212,.4);color:var(--pink);font-weight:700;font-size:15px;padding:8px 16px;border-radius:99px;text-align:center}
+.teaser{position:relative;z-index:2;margin:14px auto 0;display:table;background:rgba(242,201,212,.14);border:1.5px solid rgba(242,201,212,.4);color:var(--pink);font-weight:700;font-size:15px;padding:8px 16px;border-radius:18px;text-align:center;line-height:1.35}
+.price{margin-top:14px;background:#fff;border-radius:18px;padding:16px 16px 14px;text-align:center}
+.pr-row{display:flex;justify-content:center;align-items:baseline;gap:10px;flex-wrap:wrap}
+.pr-row s{color:#a07a86;font-size:18px}
+.pr-row b{font-family:var(--display);font-size:44px;font-weight:700;color:var(--berry);line-height:1}
+.pr-row span{color:#6d3a4a;font-weight:600}
+.pr-month{margin-top:4px;font-weight:700;color:var(--wine)}
+.pr-gifts{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:4px;font-size:15px;font-weight:600;color:var(--wine)}
+.pr-fine{margin-top:10px;font-size:12.5px;line-height:1.4;color:#7d5764}
 .count .until{text-align:center;font-size:14px;font-weight:600;color:var(--berry);margin-top:10px}
 .count.done .cells{display:none}
 .trust{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;margin-top:16px;position:relative;z-index:2;font-size:13px;color:#e3c3cd}
@@ -151,6 +159,12 @@ footer{padding-bottom:110px}
         <div class="cell"><b id="h">00</b><span>horas</span></div>
         <div class="cell"><b id="m">00</b><span>min</span></div>
         <div class="cell"><b id="s">00</b><span>seg</span></div>
+      </div>
+      <div class="price" id="precio" hidden>
+        <div class="pr-row"><s>74,99 €</s><b>59,99 €</b><span>/ trimestre</span></div>
+        <p class="pr-month">Menos de 20 € al mes</p>
+        <ul class="pr-gifts"><li>🎁 Kit antiexcesos de regalo</li><li>🎁 Guía Definitiva de regalo</li></ul>
+        <p class="pr-fine">Precio de Black Friday para tus 3 primeros meses. Después se renueva al trimestral normal de 74,99&nbsp;€.</p>
       </div>
       <p class="until" id="until" hidden></p>
       <a class="btn js-cta" id="ctaMain" href="#" target="_blank" rel="noopener">Quiero enterarme la primera 🖤</a>
@@ -216,7 +230,7 @@ footer{padding-bottom:110px}
       <div class="q">¿Sirve si estoy dando el pecho?</div>
       <div class="a">Sí, el club te sirve dando el pecho. Eso sí, en lactancia no se recorta a lo loco, así que coméntalo también con tu matrona o tu médico 🩷</div>
       <div class="q">¿Cuánto va a costar?</div>
-      <div class="a">El precio lo suelto el 24, primero en el grupo VIP. Entra y no te lo pierdas 🖤</div>
+      <div class="a" id="faqPrecio">El precio lo suelto el 24, primero en el grupo VIP. Entra y no te lo pierdas 🖤</div>
     </div>
   </div>
 </section>
@@ -240,17 +254,18 @@ footer{padding-bottom:110px}
 /* ===== AJUSTES: rellena esto ===== */
 var GRUPO   = "https://chat.whatsapp.com/LOkLIAfxEWPGBV3tNTd1XH"; // grupo VIP
 var RESPALDO = "https://ig.me/m/rebedsants";                  // si el grupo falla
-var COMPRA  = "";   // enlace de pago del club (se usa desde el 24)
-var TEASER  = "";   // ej: "Hasta un 50% menos" (vacío = no se muestra)
+var COMPRA  = "https://buy.stripe.com/dRm28u3zIh1T4l1fM36EU0y"; // enlace de pago (se usa desde el 24)
+var TEASER  = "🎁 De regalo: kit antiexcesos + Guía Definitiva"; // antes del 24
+var TEASER_ABIERTA = "59,99 € el trimestre · antes 74,99 €"; // desde el 24
 var ABRE    = "2026-11-24T00:00:00+01:00";
-var CIERRA  = "";   // ej: "2026-11-30T23:59:00+01:00" (vacío = sin fecha de cierre)
+var CIERRA  = "2026-11-30T23:59:59+01:00";
 /* ================================= */
 
 var abre = new Date(ABRE).getTime();
 var cierra = CIERRA ? new Date(CIERRA).getTime() : 0;
 var grupo = GRUPO || RESPALDO;
 var $ = function(id){ return document.getElementById(id); };
-if (TEASER) { $("teaser").textContent = TEASER; $("teaser").hidden = false; }
+function teaser(t){ $("teaser").textContent = t || ""; $("teaser").hidden = !t; }
 
 function pad(n){ return n < 10 ? "0" + n : "" + n; }
 var MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
@@ -269,6 +284,7 @@ function ponerFase(f){
   var c = $("cuenta");
   if (f === "antes") {
     $("countLabel").textContent = "La oferta abre en";
+    teaser(TEASER);
     setCta(grupo, "Quiero enterarme la primera 🖤", "Entrar en el grupo VIP 🖤", "Entrar al VIP");
     $("stickyLabel").textContent = "para que abra la oferta";
     if (cierra) { $("until").textContent = "Abierta del 24 hasta el " + fecha(cierra) + ". Luego se acaba."; $("until").hidden = false; }
@@ -276,6 +292,8 @@ function ponerFase(f){
     var compra = COMPRA || grupo;
     $("tick").textContent = "BLACK FRIDAY ✦ YA ESTÁ ABIERTO ✦ REBBE CLUB ✦ SOLO UNA VEZ AL AÑO ✦ BLACK FRIDAY ✦ YA ESTÁ ABIERTO ✦ REBBE CLUB ✦ SOLO UNA VEZ AL AÑO ✦";
     $("countLabel").textContent = cierra ? "La oferta termina en" : "¡La oferta ya está abierta!";
+    teaser(TEASER_ABIERTA); $("precio").hidden = false;
+    $("faqPrecio").textContent = "59,99 € el trimestre (antes 74,99 €), menos de 20 € al mes, con el kit antiexcesos y la Guía Definitiva de regalo. Después de los 3 primeros meses se renueva al trimestral normal de 74,99 €.";
     c.classList.toggle("done", !cierra);
     setCta(compra, COMPRA ? "Quiero mi plaza 🖤" : "Ver la oferta en el grupo 🖤", COMPRA ? "Entrar en el club 🖤" : "Ver la oferta en el grupo 🖤", COMPRA ? "Quiero mi plaza" : "Ver oferta");
     $("ctaNote").textContent = COMPRA ? "Precio de Black Friday solo hasta que acabe la cuenta atrás." : "La oferta está en el grupo VIP de WhatsApp.";
@@ -286,6 +304,8 @@ function ponerFase(f){
   } else {
     $("tick").textContent = "BLACK FRIDAY ✦ REBBE CLUB ✦ OFERTA TERMINADA ✦ GRACIAS POR ESTAR ✦ BLACK FRIDAY ✦ REBBE CLUB ✦ OFERTA TERMINADA ✦ GRACIAS POR ESTAR ✦";
     $("countLabel").textContent = "La oferta de Black Friday ha terminado";
+    teaser(""); $("precio").hidden = true;
+    $("faqPrecio").textContent = "La oferta de Black Friday ya terminó. Entra en el grupo VIP para enterarte la primera de lo próximo 🖤";
     c.classList.add("done"); $("until").hidden = true;
     setCta(grupo, "Entrar en el grupo VIP 🖤", "Entrar en el grupo VIP 🖤", "Entrar al VIP");
     $("ctaNote").textContent = "Entra en el grupo para no perderte lo próximo.";
